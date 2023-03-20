@@ -93,7 +93,7 @@ class NeuroEvolution:
         return len(set(NeuroEvolution.behavior(individual))) == 1
 
     @staticmethod
-    def evaluate(individual, models, reps=1, test_time=None):
+    def evaluate(individual, models, reps=1, test_time=None, verbose = 0):
         fitness = 0
         training_time = 0
         inference_time = 0
@@ -110,21 +110,24 @@ class NeuroEvolution:
 
                 evaluation_model.set_config(individual[0], individual[1], individual[2], individual[3], individual[4], individual[5], individual[6],
                                             individual[7], int(individual[8]), individual[9], individual[10], individual[11], individual[12],
-                                            int(individual[13]), individual[14], individual[15], individual[16],
-                                            individual[17],
+                                            int(np.round(individual[13])), individual[14], model.random_flip, model.random_rotation, model.random_zoom,
+                                            model.random_translation,
+                                            model.random_contrast,
                                             model.metric, model.epochs, model.iterations, model.patience, verbose=model.verbose,
                                             max_batch=model.max_batch, sleep=model.sleep, save_best=model.save_best, cut_threshold=model.cut_threshold)
-                print()
-                print('loss_noise:', evaluation_model.loss_noise, ', activation_noise:',
-                      evaluation_model.activation_noise, ', input_noise:',
-                      evaluation_model.input_noise, ', label_smoothing:', evaluation_model.label_smoothing,
-                      ', weight_noise:', evaluation_model.weight_noise, ', gradient_dropout:',
-                      evaluation_model.gradient_dropout,
-                      ', gradient_noise:', evaluation_model.gradient_noise, ', batch_size:',
-                      evaluation_model.batch_size, ', dropout:', evaluation_model.dropout, ', drop_connect:', evaluation_model.drop_connect,
-                ', double_batch_on:', evaluation_model.double_batch_on, ', drnn:', evaluation_model.drnn, ', weight_std:', evaluation_model.weight_std,
-                      ', random_flip:', evaluation_model.random_flip, ', random_rotation:', evaluation_model.random_rotation, ', random_zoom:', evaluation_model.random_zoom,
-                      ', random_translation:', evaluation_model.random_translation, ', random_contrast:', evaluation_model.random_contrast)
+                if (verbose):
+                    print()
+                    print('loss_noise:', evaluation_model.loss_noise, ', activation_noise:',
+                          evaluation_model.activation_noise, ', input_noise:',
+                          evaluation_model.input_noise, ', label_smoothing:', evaluation_model.label_smoothing,
+                          ', weight_noise:', evaluation_model.weight_noise, ', gradient_dropout:',
+                          evaluation_model.gradient_dropout,
+                          ', gradient_noise:', evaluation_model.gradient_noise, ', batch_size:',
+                          evaluation_model.batch_size, ', dropout:', evaluation_model.dropout, ', drop_connect:', evaluation_model.drop_connect,
+                    ', double_batch_on:', evaluation_model.double_batch_on, ', drnn:', evaluation_model.drnn, ', weight_std:', evaluation_model.weight_std,
+                          ', random_flip:', evaluation_model.random_flip, ', random_rotation:', evaluation_model.random_rotation, ', random_zoom:', evaluation_model.random_zoom,
+                          ', random_translation:', evaluation_model.random_translation, ', random_contrast:', evaluation_model.random_contrast,
+                          ', shuffle:', evaluation_model.shuffle, ', lr:', evaluation_model.lr)
 
 
                 evaluation_model.create_model()
@@ -138,13 +141,15 @@ class NeuroEvolution:
 
                 if (test_time):
                     fitness += evaluation_model.test_score
-                    print(evaluation_model.test_score)
+                    if (verbose):
+                        print(evaluation_model.test_score)
 
                 else:
                     fitness += evaluation_model.val_score
 
 
 
+                if (verbose):
 
                     print(evaluation_model.val_score, evaluation_model.test_score)
                 #print()

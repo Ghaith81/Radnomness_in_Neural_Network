@@ -33,9 +33,9 @@ class NeuralNetwork():
 
 
     def set_config(self, loss_noise, activation_noise, input_noise, gradient_noise, weight_noise, gradient_dropout, dropout,
-                   drop_connect, batch_size, double_batch_on, drnn, weight_std, label_smoothing,
+                   drop_connect, batch_size, double_batch_on, drnn, weight_std, label_smoothing, shuffle=1, lr=0.001,
                    random_flip=0, random_rotation=0, random_zoom=0, random_translation=0, random_contrast=0,
-                   metric=keras.metrics.CategoricalAccuracy(), epochs=20, iterations=100000, patience=100000, verbose=0, max_batch=32,
+                   metric=keras.metrics.CategoricalAccuracy(), epochs=20, iterations=100000, patience=100000, verbose=0, max_batch=1024,
                    sleep=3, save_best=False, cut_threshold=0.4):
         self.activation_noise = activation_noise
         self.loss_noise = loss_noise
@@ -53,11 +53,13 @@ class NeuralNetwork():
         self.save_best = save_best
         self.optimizer = None
         self.double_batch_on = int(np.ceil(double_batch_on * self.epochs))
-        print(self.double_batch_on)
+        #print(self.double_batch_on)
         self.drop_connect = drop_connect
         self.drnn = drnn
         self.weight_std = weight_std
         self.label_smoothing = label_smoothing
+        self.shuffle = shuffle
+        self.lr = lr
         self.random_flip = random_flip
         self.random_rotation = random_rotation
         self.random_zoom = random_zoom
@@ -116,7 +118,11 @@ class NeuralNetwork():
 
     def fit(self):
         train_dataset = tf.data.Dataset.from_tensor_slices((self.dataset.X_trainSampled, self.dataset.y_trainSampled))
-        train_dataset = train_dataset.shuffle(buffer_size=1024).batch(self.batch_size)
+        if (self.shuffle):
+            train_dataset = train_dataset.shuffle(buffer_size=1024).batch(self.batch_size)
+        else:
+            train_dataset = train_dataset.batch(self.batch_size)
+
 
         # Prepare the validation dataset.
         if (self.dataset.training_split < 1.0):
@@ -125,7 +131,7 @@ class NeuralNetwork():
 
         # Instantiate an optimizer to train the model.
 
-        optimizer = tf.optimizers.Adam()
+        optimizer = tf.optimizers.Adam(learning_rate=self.lr)
 
         #self.drnn_mask = tf.cast(tf.random.uniform(shape=self.model.trainable_variables.shape) > self.drnn, dtype=tf.float32)
 
@@ -312,7 +318,12 @@ class NeuralNetwork():
 
             train_dataset = tf.data.Dataset.from_tensor_slices(
                 (self.dataset.X_trainSampled, self.dataset.y_trainSampled))
-            train_dataset = train_dataset.shuffle(buffer_size=1024).batch(current_batch)
+            if (self.shuffle):
+                train_dataset = train_dataset.shuffle(buffer_size=1024).batch(current_batch)
+            else:
+                train_dataset = train_dataset.batch(current_batch)
+
+            #train_dataset = train_dataset.shuffle(buffer_size=1024).batch(current_batch)
 
             #Prepare the validation dataset.
             if (self.dataset.training_split < 1.0):

@@ -211,30 +211,34 @@ class Swarm:
                         r2 = random.uniform(0, 1)
 
                         #print(counter, i, np.where(self.topology.adjacency_matrix[i] == 1))
-                        #print('i', i)
-                        #print('j', j)
-                        #print('velocity', self.velocity[i][j])
-                        #print('r1, r1', r1, r2)
-                        #print('pbest', self.pbest_pos[i][j] )
-                        #print('global_best', global_best[j] )
-                        #print('1', self.options['w'] * self.velocity[i][j])
-                        #print('2', self.options['c1'] * r1 * (
-                        #            self.pbest_pos[i][j] - self.position[i][j]))
-                        #print('3', self.options['c2'] * r2 * (
-                        #                                  global_best[j] - self.position[i][j]))
+                        #if (global_best[j] != 0 and self.position[i][j] == 0):
+                        #    print('i', i)
+                        #    print('j', j)
+                            #print('velocity', self.velocity[i][j])
+                            #print('r1, r1', r1, r2)
+                       #     print('current', self.position[i][j] )
+                       #     print('pbest', self.pbest_pos[i][j] )
+                       #     print('global_best', global_best[j] )
+                       #     print('1', self.options['w'] * self.velocity[i][j])
+                       #     print('2', self.options['c1'] * r1 * (
+                       #                 self.pbest_pos[i][j] - self.position[i][j]))
+                       #     print('3', self.options['c2'] * r2 * (
+                       #                                       global_best[j] - self.position[i][j]))
+                       #     print()
 
                         self.velocity[i][j] = self.options['w'] * self.velocity[i][j] + self.options['c1'] * r1 * (
                                     self.pbest_pos[i][j] - self.position[i][j]) + self.options['c2'] * r2 * (
                                                           global_best[j] - self.position[i][j])
 
                         #print('velocity after', self.velocity[i][j])
-                        #print()
 
 
                         if (self.velocity[i][j] < self.velocity_clamp[j][0]):
                             self.velocity[i][j] = self.velocity_clamp[j][0]
                         if (self.velocity[i][j] > self.velocity_clamp[j][1]):
                             self.velocity[i][j] = self.velocity_clamp[j][1]
+
+
 
                         #print('spped', i, j, self.velocity[i][j])
 
@@ -252,6 +256,11 @@ class Swarm:
                             self.position[i][j] = self.bounds[j][0]
                         if (self.bounded and self.position[i][j] > self.bounds[j][1]):
                             self.position[i][j] = self.bounds[j][1]
+
+                        #if (global_best[j] != 0 and self.position[i][j] == 0):
+
+                        #    print('current after', self.position[i][j])
+                        #    print()
 
                     # fitness = self.evaluate(self.position[i])
                     self.alive[i] -= 1
