@@ -110,9 +110,9 @@ class NeuroEvolution:
 
                 evaluation_model.set_config(individual[0], individual[1], individual[2], individual[3], individual[4], individual[5], individual[6],
                                             individual[7], int(individual[8]), individual[9], individual[10], individual[11], individual[12],
-                                            int(np.round(individual[13])), individual[14], model.random_flip, model.random_rotation, model.random_zoom,
-                                            model.random_translation,
-                                            model.random_contrast,
+                                            int(np.round(individual[13])), individual[14], int(np.round(individual[15])),
+                                            int(np.round(individual[16])), individual[17], individual[18],
+                                            individual[19], individual[20],
                                             model.metric, model.epochs, model.iterations, model.patience, verbose=model.verbose,
                                             max_batch=model.max_batch, sleep=model.sleep, save_best=model.save_best, cut_threshold=model.cut_threshold)
                 if (verbose):
@@ -125,9 +125,9 @@ class NeuroEvolution:
                           ', gradient_noise:', evaluation_model.gradient_noise, ', batch_size:',
                           evaluation_model.batch_size, ', dropout:', evaluation_model.dropout, ', drop_connect:', evaluation_model.drop_connect,
                     ', double_batch_on:', evaluation_model.double_batch_on, ', drnn:', evaluation_model.drnn, ', weight_std:', evaluation_model.weight_std,
-                          ', random_flip:', evaluation_model.random_flip, ', random_rotation:', evaluation_model.random_rotation, ', random_zoom:', evaluation_model.random_zoom,
-                          ', random_translation:', evaluation_model.random_translation, ', random_contrast:', evaluation_model.random_contrast,
-                          ', shuffle:', evaluation_model.shuffle, ', lr:', evaluation_model.lr)
+                          ', flip:', evaluation_model.random_flip, ', rotation:', evaluation_model.random_rotation, ', zoom:', evaluation_model.random_zoom,
+                          ', translation:', evaluation_model.random_translation, ', contrast:', evaluation_model.random_contrast,
+                          ', shuffle:', evaluation_model.shuffle, ', lr:', evaluation_model.lr, ', optimizer:', evaluation_model.optimizer)
 
 
                 evaluation_model.create_model()

@@ -33,14 +33,19 @@ class NeuralNetwork():
 
 
     def set_config(self, loss_noise, activation_noise, input_noise, gradient_noise, weight_noise, gradient_dropout, dropout,
-                   drop_connect, batch_size, double_batch_on, drnn, weight_std, label_smoothing, shuffle=1, lr=0.001,
+                   drop_connect, batch_size, double_batch_on, drnn, weight_std, label_smoothing, shuffle=1, lr=3, optimizer=0,
                    random_flip=0, random_rotation=0, random_zoom=0, random_translation=0, random_contrast=0,
                    metric=keras.metrics.CategoricalAccuracy(), epochs=20, iterations=100000, patience=100000, verbose=0, max_batch=1024,
                    sleep=3, save_best=False, cut_threshold=0.4):
         self.activation_noise = activation_noise
+        #print(self.activation_noise)
         self.loss_noise = loss_noise
         self.input_noise = input_noise
-        self.weight_noise = weight_noise
+        if weight_noise > 6:
+            self.weight_noise = 0
+        else:
+            self.weight_noise = 1 / np.power(10, weight_noise)
+        #print(self.weight_noise)
         self.metric = metric
         self.batch_size = batch_size
         self.epochs = epochs
@@ -51,15 +56,16 @@ class NeuralNetwork():
         self.gradient_noise = gradient_noise
         self.gradient_dropout = gradient_dropout
         self.save_best = save_best
-        self.optimizer = None
-        self.double_batch_on = int(np.ceil(double_batch_on * self.epochs))
+        self.optimizer = optimizer
+        self.double_batch_on = int((double_batch_on * self.epochs)+1)
         #print(self.double_batch_on)
         self.drop_connect = drop_connect
         self.drnn = drnn
         self.weight_std = weight_std
+
         self.label_smoothing = label_smoothing
         self.shuffle = shuffle
-        self.lr = lr
+        self.lr = 1 / np.power(10, lr)
         self.random_flip = random_flip
         self.random_rotation = random_rotation
         self.random_zoom = random_zoom
@@ -131,7 +137,15 @@ class NeuralNetwork():
 
         # Instantiate an optimizer to train the model.
 
-        optimizer = tf.optimizers.Adam(learning_rate=self.lr)
+        decay_steps = 1000
+        lr_decayed_fn = tf.keras.optimizers.schedules.CosineDecay(
+            self.lr, decay_steps, alpha=0.2)
+
+        if (self.optimizer):
+            optimizer = tf.optimizers.Adam(learning_rate=self.lr)
+        else:
+            optimizer = tf.optimizers.SGD(learning_rate=self.lr)
+
 
         #self.drnn_mask = tf.cast(tf.random.uniform(shape=self.model.trainable_variables.shape) > self.drnn, dtype=tf.float32)
 
@@ -250,6 +264,8 @@ class NeuralNetwork():
         start = time.time()
 
 
+
+
         # Define the data augmentation pipeline
         if (self.random_flip == 0):
 
@@ -295,6 +311,7 @@ class NeuralNetwork():
 
 
         for epoch in range(self.epochs):
+            #print(optimizer.lr, optimizer.learning_rate)
             average_train_step_time = 0
             train_step_counter_within_epoch = 0
             #if (self.adaptive_batch and patience_counter == 0):
@@ -336,8 +353,9 @@ class NeuralNetwork():
 
             # Iterate over the batches of the dataset.
             for step, (x_batch_train, y_batch_train) in enumerate(train_dataset):
-                # print(type(epoch), type(train_step_counter))
+                #print((epoch), (train_step_counter))
                 #print(type(epoch), type(train_step_counter))
+                #optimizer.lr = lr_decayed_fn(optimizer.lr)
 
                 timer = time.time()
                 images = data_augmentation(x_batch_train)
@@ -418,8 +436,8 @@ class NeuralNetwork():
             if (optimizer.iterations > self.iterations):
                 break
 
-            #if (patience_counter == self.patience):
-            #    break
+            if (patience_counter == self.patience):
+                break
 
 
         if(self.save_best):
