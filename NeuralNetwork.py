@@ -32,10 +32,10 @@ class NeuralNetwork():
         self.neurons = neurons
 
 
-    def set_config(self, loss_noise, activation_noise, input_noise, gradient_noise, weight_noise, gradient_dropout, dropout,
-                   drop_connect, batch_size, double_batch_on, drnn, weight_std, label_smoothing, shuffle=1, lr=3, optimizer=0,
-                   random_flip=0, random_rotation=0, random_zoom=0, random_translation=0, random_contrast=0,
-                   metric=keras.metrics.CategoricalAccuracy(), epochs=20, iterations=100000, patience=100000, verbose=0, max_batch=1024,
+    def set_config(self, shuffle, random_flip, random_rotation, random_zoom, random_translation, random_contrast, input_noise,
+              label_smoothing, weight_std, dropout, drop_connect, drnn, activation_noise, loss_noise,
+              optimizer, lr, lr_schedule, batch_size, batch_schedule, weight_noise, gradient_noise, gradient_dropout,
+                   metric=keras.metrics.CategoricalAccuracy(), epochs=20, iterations=100000, patience=100000, verbose=0, batch_range=[16, 1024], lr_range=[1,5],
                    sleep=3, save_best=False, cut_threshold=0.4):
         self.activation_noise = activation_noise
         #print(self.activation_noise)
@@ -57,7 +57,21 @@ class NeuralNetwork():
         self.gradient_dropout = gradient_dropout
         self.save_best = save_best
         self.optimizer = optimizer
-        self.double_batch_on = int((double_batch_on * self.epochs)+1)
+        self.batch_increase = 0
+        if (batch_schedule > 0):
+            self.batch_increase = 1
+
+        self.batch_schedule = int(((1-np.abs(batch_schedule)) * self.epochs)+1)
+        #print(self.batch_increase, self.batch_schedule)
+
+        self.lr_increase = 0
+        if (lr_schedule > 0):
+            self.lr_increase = 1
+
+        self.lr_schedule = int(((1-np.abs(lr_schedule)) * self.epochs)+1)
+        #print(self.lr_increase, self.lr_schedule)
+
+        #self.lr_decay = int((lr_decay * self.epochs)+1)
         #print(self.double_batch_on)
         self.drop_connect = drop_connect
         self.drnn = drnn
@@ -72,9 +86,14 @@ class NeuralNetwork():
         self.random_translation = random_translation
         self.random_contrast = random_contrast
         #self.max_batch = len(self.dataset.X_trainSampled)
-        self.max_batch = max_batch
+        self.batch_range = batch_range
         self.sleep = sleep
         self.cut_threshold = cut_threshold
+        self.lr_range = lr_range
+
+        #print(self.lr_decay)
+        #print()
+
 
 
     def fit_keras(self):
@@ -141,9 +160,11 @@ class NeuralNetwork():
         lr_decayed_fn = tf.keras.optimizers.schedules.CosineDecay(
             self.lr, decay_steps, alpha=0.2)
 
-        if (self.optimizer):
+        if (self.optimizer == 3):
             optimizer = tf.optimizers.Adam(learning_rate=self.lr)
-        else:
+        elif (self.optimizer == 2):
+            optimizer = tf.optimizers.SGD(learning_rate=self.lr, momentum=0.9)
+        elif (self.optimizer <= 1):
             optimizer = tf.optimizers.SGD(learning_rate=self.lr)
 
 
@@ -258,6 +279,7 @@ class NeuralNetwork():
 
         patience_counter = 0
         current_batch = self.batch_size
+        current_lr = self.lr
 
         gpu_timer = time.time()
 
@@ -267,7 +289,7 @@ class NeuralNetwork():
 
 
         # Define the data augmentation pipeline
-        if (self.random_flip == 0):
+        if (self.random_flip <= 1):
 
             data_augmentation = tf.keras.Sequential([
                 tf.keras.layers.experimental.preprocessing.RandomRotation(self.random_rotation),
@@ -276,7 +298,7 @@ class NeuralNetwork():
                 tf.keras.layers.experimental.preprocessing.RandomContrast(factor=self.random_contrast),
             ])
 
-        elif (self.random_flip == 1):
+        elif (self.random_flip == 2):
 
             data_augmentation = tf.keras.Sequential([
                 tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal_and_vertical"),
@@ -287,7 +309,7 @@ class NeuralNetwork():
                 tf.keras.layers.experimental.preprocessing.RandomContrast(factor=self.random_contrast),
             ])
 
-        elif (self.random_flip == 2):
+        elif (self.random_flip == 3):
 
             data_augmentation = tf.keras.Sequential([
                 tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal"),
@@ -298,7 +320,7 @@ class NeuralNetwork():
                 tf.keras.layers.experimental.preprocessing.RandomContrast(factor=self.random_contrast),
             ])
 
-        elif (self.random_flip == 3):
+        elif (self.random_flip == 4):
 
             data_augmentation = tf.keras.Sequential([
                 tf.keras.layers.experimental.preprocessing.RandomFlip("vertical"),
@@ -311,7 +333,7 @@ class NeuralNetwork():
 
 
         for epoch in range(self.epochs):
-            #print(optimizer.lr, optimizer.learning_rate)
+            #print(optimizer.lr, optimizer.learning_rate, current_lr)
             average_train_step_time = 0
             train_step_counter_within_epoch = 0
             #if (self.adaptive_batch and patience_counter == 0):
@@ -319,15 +341,46 @@ class NeuralNetwork():
             #if (self.adaptive_batch and patience_counter != 0):
             #        current_batch += 4
 
-            if (self.double_batch_on and epoch > 0 and epoch%self.double_batch_on==0):
-
+            if (self.batch_increase>0 and epoch > 0 and epoch%self.batch_schedule==0):
                 current_batch *= 2
+
+            if (self.batch_increase==0 and epoch > 0 and epoch % self.batch_schedule == 0):
+                current_batch = int(current_batch /2)
+
+            if (current_batch > self.batch_range[1]):
+                    current_batch = self.batch_range[1]
+
+            if (current_batch < self.batch_range[0]):
+                    current_batch = self.batch_range[0]
+
+                    # self.sleep = self.sleep/2
+            #print(self.lr_schedule, epoch % self.lr_schedule)
+            if (self.lr_increase>0 and epoch > 0 and epoch % self.lr_schedule == 0):
+                    current_lr *= 2
+                    #print('increase')
+
+            if (self.lr_increase== 0 and epoch > 0 and epoch % self.lr_schedule == 0):
+                    current_lr = current_lr/2
+                    #print('decrease')
+
+                    #print('now now', current_lr, self.min_lr)
+                    #print('check', current_lr < self.min_lr)
+            if (current_lr > 1 / np.power(10, self.lr_range[0])):
+                    current_lr = 1 / np.power(10, self.lr_range[0])
+
+            if (current_lr < 1 / np.power(10, self.lr_range[1])):
+                        current_lr = 1 / np.power(10, self.lr_range[1])
+
+            #print('after', optimizer.lr, optimizer.learning_rate, current_lr)
+
+
+
+            optimizer.lr.assign(current_lr)
+
 
                 #self.sleep *= 2
 
-                if (current_batch > self.max_batch):
-                    current_batch = self.max_batch
-                    #self.sleep = self.sleep/2
+
 
             #print(self.sleep)
             number_of_training_steps_per_epoch = len(self.dataset.X_trainSampled)//current_batch
@@ -356,6 +409,7 @@ class NeuralNetwork():
                 #print((epoch), (train_step_counter))
                 #print(type(epoch), type(train_step_counter))
                 #optimizer.lr = lr_decayed_fn(optimizer.lr)
+                #print(optimizer.lr)
 
                 timer = time.time()
                 images = data_augmentation(x_batch_train)

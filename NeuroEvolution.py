@@ -93,11 +93,12 @@ class NeuroEvolution:
         return len(set(NeuroEvolution.behavior(individual))) == 1
 
     @staticmethod
-    def evaluate(individual, models, reps=1, test_time=None, verbose = 0):
+    def evaluate(individual, models, reps=1, test_time=None, verbose = 1):
         fitness = 0
         training_time = 0
         inference_time = 0
         epoch_time = 0
+
 
         #print(individual)
         for model in models:
@@ -108,13 +109,14 @@ class NeuroEvolution:
                 elif (isinstance(model, NeuralNetwork.VGG)):
                     evaluation_model = type(model).__call__(model.dataset,  model.blocks)
 
-                evaluation_model.set_config(individual[0], individual[1], individual[2], individual[3], individual[4], individual[5], individual[6],
-                                            individual[7], int(individual[8]), individual[9], individual[10], individual[11], individual[12],
-                                            int(np.round(individual[13])), individual[14], int(np.round(individual[15])),
-                                            int(np.round(individual[16])), individual[17], individual[18],
-                                            individual[19], individual[20],
+                evaluation_model.set_config(int(np.round(individual[0])), int(np.ceil(individual[1])),
+                                            individual[2], individual[3], individual[4], individual[5], individual[6],
+                                            individual[7], individual[8], individual[9], individual[10], individual[11],
+                                            individual[12], individual[13], int(np.ceil(individual[14])),
+                                            individual[15], individual[16], int(np.round(individual[17])),
+                                            individual[18], individual[19], individual[20], individual[21],
                                             model.metric, model.epochs, model.iterations, model.patience, verbose=model.verbose,
-                                            max_batch=model.max_batch, sleep=model.sleep, save_best=model.save_best, cut_threshold=model.cut_threshold)
+                                            batch_range=model.batch_range, lr_range=model.lr_range, sleep=model.sleep, save_best=model.save_best, cut_threshold=model.cut_threshold)
                 if (verbose):
                     print()
                     print('loss_noise:', evaluation_model.loss_noise, ', activation_noise:',
@@ -124,14 +126,16 @@ class NeuroEvolution:
                           evaluation_model.gradient_dropout,
                           ', gradient_noise:', evaluation_model.gradient_noise, ', batch_size:',
                           evaluation_model.batch_size, ', dropout:', evaluation_model.dropout, ', drop_connect:', evaluation_model.drop_connect,
-                    ', double_batch_on:', evaluation_model.double_batch_on, ', drnn:', evaluation_model.drnn, ', weight_std:', evaluation_model.weight_std,
+                    ', batch_schedule:', evaluation_model.batch_schedule, ', drnn:', evaluation_model.drnn, ', weight_std:', evaluation_model.weight_std,
                           ', flip:', evaluation_model.random_flip, ', rotation:', evaluation_model.random_rotation, ', zoom:', evaluation_model.random_zoom,
                           ', translation:', evaluation_model.random_translation, ', contrast:', evaluation_model.random_contrast,
-                          ', shuffle:', evaluation_model.shuffle, ', lr:', evaluation_model.lr, ', optimizer:', evaluation_model.optimizer)
+                          ', shuffle:', evaluation_model.shuffle, ', lr:', evaluation_model.lr, ', optimizer:', evaluation_model.optimizer,
+                          ', lr_schedule:', evaluation_model.lr_schedule, ', batch_increase:', evaluation_model.batch_increase,
+                          ', lr_increase:', evaluation_model.lr_increase)
 
 
                 evaluation_model.create_model()
-                evaluation_model.max_batch = model.max_batch
+                #evaluation_model.max_batch = model.max_batch
 
                 start = time.time()
                 evaluation_model.fit()
