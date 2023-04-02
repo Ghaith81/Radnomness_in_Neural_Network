@@ -41,7 +41,7 @@ class NeuralNetwork():
         #print(self.activation_noise)
         self.loss_noise = loss_noise
         self.input_noise = input_noise
-        if weight_noise > 6:
+        if weight_noise >= 6:
             self.weight_noise = 0
         else:
             self.weight_noise = 1 / np.power(10, weight_noise)

@@ -13,6 +13,7 @@ import Representation
 import tensorflow as tf
 import os
 import math
+import itertools
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
@@ -93,7 +94,7 @@ class NeuroEvolution:
         return len(set(NeuroEvolution.behavior(individual))) == 1
 
     @staticmethod
-    def evaluate(individual, models, reps=1, test_time=None, verbose = 1):
+    def evaluate(individual, models, reps=1, test_time=None, verbose = 0, log = 1):
         fitness = 0
         training_time = 0
         inference_time = 0
@@ -151,7 +152,26 @@ class NeuroEvolution:
                 else:
                     fitness += evaluation_model.val_score
 
+                if (log):
+                    timestr = time.strftime("%Y%m%d")
+                    if (os.path.isfile('log\\'+timestr+'.xlsx')):
+                        log_file = pd.read_excel('log\\'+timestr+'.xlsx')
+                    else:
+                        log_file = pd.DataFrame(
+                            columns=['network', 'epochs', 'shuffle', 'flip', 'rotation', 'zoom', 'translation', 'contrast'
+                                , 'input_noise', 'label smoothing', 'weight init', 'dropout', 'dropconnect',
+                                     'drnn', 'activation noise', 'loss noise',
+                                     'optimizer', 'lr', 'lr schedule', 'batch', 'batch schedule', 'weight noise',
+                                     'gradient noise',
+                                     'gradient dropout', 'fitness'])
 
+                    row = [type(evaluation_model).__name__, evaluation_model.epochs]
+                    for value in individual:
+                        row.append(value)
+                    row.append(fitness/reps)
+                    log_file.loc[len(log_file)] = row
+
+                    log_file.to_excel('log\\'+timestr+'.xlsx', index=False)
 
                 if (verbose):
 
