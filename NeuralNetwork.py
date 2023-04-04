@@ -535,23 +535,125 @@ class NeuralNetwork():
         outputs = layers.Dense(self.dataset.num_classes, activation="softmax")(x)
         self.model = tf.keras.Model(inputs=inputs, outputs=outputs)
 
+class EfficientNetB0(NeuralNetwork):
+    def __init__(self, dataset):
+        self.dataset = dataset
 
+    def Swish(self, x):
+        return x * tf.keras.activations.sigmoid(x)
 
-
-
-class VGG1(NeuralNetwork):
     def create_model(self):
-            inputs = tf.keras.Input(shape=self.dataset.input_shape)
-            x = tf.keras.layers.GaussianNoise(self.input_noise)(inputs)
-            x = layers.Conv2D(32, kernel_size=(3, 3), activation=self.activation_fn)(x)
-            x = layers.Conv2D(32, kernel_size=(3, 3), activation=self.activation_fn)(x)
-            x = layers.MaxPooling2D(pool_size=(2, 2))(x)
-            x = layers.Dropout(self.dropout)(x)
-            x = layers.Flatten()(x)
-            x = layers.Dense(128, activation=self.activation_fn)(x)
-            x = layers.Dropout(self.dropout)(x)
-            outputs = layers.Dense(self.dataset.num_classes, activation="softmax")(x)
-            self.model = tf.keras.Model(inputs=inputs, outputs=outputs)
+        inputs = tf.keras.layers.Input(shape=self.dataset.input_shape)
+        x = tf.keras.layers.Conv2D(32, 3, padding='same', use_bias=False)(inputs)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = NoisyReLU(stddev=self.activation_noise)(x)
+
+        # Depthwise Convolution
+        x = tf.keras.layers.DepthwiseConv2D(3, padding='same', use_bias=False)(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Activation(self.Swish)(x)
+
+        # Squeeze and Excitation
+        channels = int(x.shape[-1])
+        se_shape = (1, 1, channels)
+        se = tf.keras.layers.GlobalAveragePooling2D()(x)
+        se = tf.keras.layers.Reshape(se_shape)(se)
+        se = tf.keras.layers.Dense(channels // 4, activation=self.Swish, use_bias=False)(se)
+        se = tf.keras.layers.Dense(channels, activation='sigmoid', use_bias=False)(se)
+        x = tf.keras.layers.Multiply()([x, se])
+
+        x = tf.keras.layers.MaxPooling2D(2)(x)
+
+        # Blocks
+        for i in range(1, 6):
+            # Expand
+            expand_size = 32 * i
+            x1 = tf.keras.layers.Conv2D(expand_size, 1, padding='same', use_bias=False)(x)
+            x1 = tf.keras.layers.BatchNormalization()(x1)
+            x1 = NoisyReLU(stddev=self.activation_noise)(x1)
+
+            # Depthwise Convolution
+            x1 = tf.keras.layers.DepthwiseConv2D(3, padding='same', use_bias=False)(x1)
+            x1 = tf.keras.layers.BatchNormalization()(x1)
+            x1 = NoisyReLU(stddev=self.activation_noise)(x1)
+
+            # Squeeze and Excitation
+            channels = int(x1.shape[-1])
+            se_shape = (1, 1, channels)
+            se = tf.keras.layers.GlobalAveragePooling2D()(x1)
+            se = tf.keras.layers.Reshape(se_shape)(se)
+            se = tf.keras.layers.Dense(channels // 4, activation=self.Swish, use_bias=False)(se)
+            se = tf.keras.layers.Dense(channels, activation='sigmoid', use_bias=False)(se)
+            x1 = tf.keras.layers.Multiply()([x1, se])
+
+            # Project
+            x1 = tf.keras.layers.Conv2D(16, 1, padding='same', use_bias=False)(x1)
+            x1 = tf.keras.layers.BatchNormalization()(x1)
+
+            # Skip connection and concatenate
+            x = tf.keras.layers.Concatenate()([x, x1])
+
+        # Head
+        x = tf.keras.layers.Conv2D(320, 1, padding='same', use_bias=False)(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Activation(self.Swish)(x)
+
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
+        x = tf.keras.layers.Dense(self.dataset.num_classes, activation='softmax')(x)
+
+        self.model = tf.keras.Model(inputs=inputs, outputs=x, name='EfficientNetB0')
+
+
+class shufflenet_v2(NeuralNetwork):
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def create_model(self):
+        inputs = tf.keras.layers.Input(shape=self.dataset.input_shape)
+        x = tf.keras.layers.Conv2D(24, kernel_size=3, strides=1, padding='same')(inputs)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = tf.keras.layers.Activation('relu')(x)
+
+        x = self.shufflenet_unit(x, out_channels=240, strides=2)
+        x = self.shufflenet_unit(x, out_channels=480, strides=2)
+        x = self.shufflenet_unit(x, out_channels=960, strides=2)
+
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
+        x = tf.keras.layers.Dense(self.dataset.num_classes)(x)
+
+        outputs = tf.keras.layers.Activation('softmax')(x)
+
+        self.model = tf.keras.models.Model(inputs=inputs, outputs=outputs)
+
+    def shufflenet_unit(self, inputs, out_channels, strides=1):
+        bottleneck_channels = out_channels // 4
+        if strides == 1:
+            shortcut = inputs
+        else:
+            shortcut = tf.keras.layers.Conv2D(out_channels, kernel_size=1, strides=strides, padding='same')(inputs)
+            shortcut = tf.keras.layers.BatchNormalization()(shortcut)
+
+        x = tf.keras.layers.Conv2D(bottleneck_channels, kernel_size=1, strides=1, padding='same')(inputs)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = NoisyReLU(stddev=self.activation_noise)(x)
+        x = layers.Dropout(self.dropout)(x)
+
+
+        x = tf.keras.layers.DepthwiseConv2D(kernel_size=3, strides=strides, padding='same')(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+        x = NoisyReLU(stddev=self.activation_noise)(x)
+        x = layers.Dropout(self.dropout)(x)
+
+
+        x = tf.keras.layers.Conv2D(bottleneck_channels, kernel_size=1, strides=1, padding='same')(x)
+        x = tf.keras.layers.BatchNormalization()(x)
+
+        x = tf.keras.layers.concatenate([shortcut, x])
+        x = NoisyReLU(stddev=self.activation_noise)(x)
+        x = layers.Dropout(self.dropout)(x)
+
+        return x
+
 
 class VGG(NeuralNetwork):
     def __init__(self, dataset, blocks):

@@ -58,6 +58,186 @@ class Dataset():
         self.X_trainSampled = self.X_train[:sample_size]
         self.y_trainSampled = self.y_train[:sample_size]
 
+
+class MNIST(Dataset):
+    def __init__(self, label_noise=0, training_split=1.0):
+        (X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
+        self.num_classes =  10
+        self.input_shape = (28, 28, 1)
+        self.training_split = training_split
+
+        # Scale images to the [0, 1] range
+        X_train = X_train.astype("float32") / 255
+        X_test = X_test.astype("float32") / 255
+        # Make sure images have shape (28, 28, 1)
+
+
+
+        self.X_train = X_train
+        self.X_test = X_test
+        self.y_train = y_train
+        self.y_test = y_test
+        if (self.training_split < 1.0):
+            split = int(np.round(len(X_train) * self.training_split))
+            self.X_train, self.X_val = self.X_train[:split, :], self.X_train[split:, :]
+            self.y_train, self.y_val = self.y_train[:split], self.y_train[split:]
+
+
+        if (label_noise):
+            y_train_noisy = []
+            for label in self.y_train:
+                if random.random() < label_noise:
+                    possible_labels = list(np.unique(y_train))
+                    possible_labels.remove(label)
+                    # print(label)
+                    label = random.choice(possible_labels)
+                    # print(label)
+                y_train_noisy.append([label])
+            self.y_train = y_train_noisy
+
+
+        self.y_train = keras.utils.to_categorical(self.y_train, self.num_classes)
+        self.y_test = keras.utils.to_categorical(self.y_test, self.num_classes)
+        if (self.training_split < 1.0):
+            self.y_val = keras.utils.to_categorical(self.y_val, self.num_classes)
+
+        self.set_training_sample(self.X_train.shape[0])
+
+class Fashion_MNIST(Dataset):
+    def __init__(self, label_noise=0, training_split=1.0):
+        (X_train, y_train), (X_test, y_test) = keras.datasets.fashion_mnist.load_data()
+        self.num_classes =  10
+        self.input_shape = (28, 28, 1)
+        self.training_split = training_split
+
+        # Scale images to the [0, 1] range
+        X_train = X_train.astype("float32") / 255
+        X_test = X_test.astype("float32") / 255
+        # Make sure images have shape (28, 28, 1)
+
+
+
+        self.X_train = X_train
+        self.X_test = X_test
+        self.y_train = y_train
+        self.y_test = y_test
+        if (self.training_split < 1.0):
+            split = int(np.round(len(X_train) * self.training_split))
+            self.X_train, self.X_val = self.X_train[:split, :], self.X_train[split:, :]
+            self.y_train, self.y_val = self.y_train[:split], self.y_train[split:]
+
+
+        if (label_noise):
+            y_train_noisy = []
+            for label in self.y_train:
+                if random.random() < label_noise:
+                    possible_labels = list(np.unique(y_train))
+                    possible_labels.remove(label)
+                    # print(label)
+                    label = random.choice(possible_labels)
+                    # print(label)
+                y_train_noisy.append([label])
+            self.y_train = y_train_noisy
+
+
+        self.y_train = keras.utils.to_categorical(self.y_train, self.num_classes)
+        self.y_test = keras.utils.to_categorical(self.y_test, self.num_classes)
+        if (self.training_split < 1.0):
+            self.y_val = keras.utils.to_categorical(self.y_val, self.num_classes)
+
+        self.set_training_sample(self.X_train.shape[0])
+
+class CIFAR10(Dataset):
+    def __init__(self, label_noise=0, training_split=1.0):
+        (X_train, y_train), (X_test, y_test) = keras.datasets.cifar10.load_data()
+        self.num_classes =  10
+        self.input_shape = (32, 32, 3)
+        self.training_split = training_split
+
+        # Scale images to the [0, 1] range
+        X_train = X_train.astype("float32") / 255
+        X_test = X_test.astype("float32") / 255
+
+        X_train = np.expand_dims(X_train, -1)
+        X_test = np.expand_dims(X_test, -1)
+
+
+        self.X_train = X_train
+        self.X_test = X_test
+        self.y_train = y_train
+        self.y_test = y_test
+        if (self.training_split < 1.0):
+            split = int(np.round(len(X_train) * self.training_split))
+            self.X_train, self.X_val = self.X_train[:split, :], self.X_train[split:, :]
+            self.y_train, self.y_val = self.y_train[:split], self.y_train[split:]
+
+
+        if (label_noise):
+            y_train_noisy = []
+            for label in self.y_train:
+                if random.random() < label_noise:
+                    possible_labels = list(np.unique(y_train))
+                    possible_labels.remove(label)
+                    # print(label)
+                    label = random.choice(possible_labels)
+                    # print(label)
+                y_train_noisy.append([label])
+            self.y_train = y_train_noisy
+
+
+        self.y_train = keras.utils.to_categorical(self.y_train, self.num_classes)
+        self.y_test = keras.utils.to_categorical(self.y_test, self.num_classes)
+        if (self.training_split < 1.0):
+            self.y_val = keras.utils.to_categorical(self.y_val, self.num_classes)
+
+        self.set_training_sample(self.X_train.shape[0])
+
+class CIFAR100(Dataset):
+    def __init__(self, label_noise=0, training_split=1.0):
+        (X_train, y_train), (X_test, y_test) = keras.datasets.cifar100.load_data()
+        self.num_classes =  100
+        self.input_shape = (32, 32, 3)
+        self.training_split = training_split
+
+        # Scale images to the [0, 1] range
+        X_train = X_train.astype("float32") / 255
+        X_test = X_test.astype("float32") / 255
+
+        X_train = np.expand_dims(X_train, -1)
+        X_test = np.expand_dims(X_test, -1)
+
+
+        self.X_train = X_train
+        self.X_test = X_test
+        self.y_train = y_train
+        self.y_test = y_test
+        if (self.training_split < 1.0):
+            split = int(np.round(len(X_train) * self.training_split))
+            self.X_train, self.X_val = self.X_train[:split, :], self.X_train[split:, :]
+            self.y_train, self.y_val = self.y_train[:split], self.y_train[split:]
+
+
+        if (label_noise):
+            y_train_noisy = []
+            for label in self.y_train:
+                if random.random() < label_noise:
+                    possible_labels = list(np.unique(y_train))
+                    possible_labels.remove(label)
+                    # print(label)
+                    label = random.choice(possible_labels)
+                    # print(label)
+                y_train_noisy.append([label])
+            self.y_train = y_train_noisy
+
+
+        self.y_train = keras.utils.to_categorical(self.y_train, self.num_classes)
+        self.y_test = keras.utils.to_categorical(self.y_test, self.num_classes)
+        if (self.training_split < 1.0):
+            self.y_val = keras.utils.to_categorical(self.y_val, self.num_classes)
+
+        self.set_training_sample(self.X_train.shape[0])
+
+
 class SPIRAL(Dataset):
     def __init__(self, points, noise, input_shape, random_state=0, training_split=1.0):
         self.num_classes = 2

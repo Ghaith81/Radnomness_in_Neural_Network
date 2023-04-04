@@ -159,7 +159,7 @@ class NeuroEvolution:
                     else:
                         log_file = pd.DataFrame(
                             columns=['network', 'epochs', 'shuffle', 'flip', 'rotation', 'zoom', 'translation', 'contrast'
-                                , 'input_noise', 'label smoothing', 'weight init', 'dropout', 'dropconnect',
+                                , 'input noise', 'label smoothing', 'weight init', 'dropout', 'dropconnect',
                                      'drnn', 'activation noise', 'loss noise',
                                      'optimizer', 'lr', 'lr schedule', 'batch', 'batch schedule', 'weight noise',
                                      'gradient noise',
@@ -169,6 +169,8 @@ class NeuroEvolution:
                     for value in individual:
                         row.append(value)
                     row.append(fitness/reps)
+                    #print(row, len(row))
+                    #print(log_file.shape)
                     log_file.loc[len(log_file)] = row
 
                     log_file.to_excel('log\\'+timestr+'.xlsx', index=False)
