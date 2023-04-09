@@ -153,22 +153,28 @@ class NeuroEvolution:
                     fitness += evaluation_model.val_score
 
                 if (log):
-                    timestr = time.strftime("%Y%m%d")
+                    timestr = str(type(evaluation_model).__name__)+'_'+str(type(evaluation_model.dataset).__name__)+'_'+time.strftime("%Y%m%d")
                     if (os.path.isfile('log\\'+timestr+'.xlsx')):
                         log_file = pd.read_excel('log\\'+timestr+'.xlsx')
                     else:
                         log_file = pd.DataFrame(
-                            columns=['network', 'epochs', 'shuffle', 'flip', 'rotation', 'zoom', 'translation', 'contrast'
+                            columns=['epochs', 'shuffle', 'flip', 'rotation', 'zoom', 'translation', 'contrast'
                                 , 'input noise', 'label smoothing', 'weight init', 'dropout', 'dropconnect',
                                      'drnn', 'activation noise', 'loss noise',
                                      'optimizer', 'lr', 'lr schedule', 'batch', 'batch schedule', 'weight noise',
                                      'gradient noise',
-                                     'gradient dropout', 'fitness'])
+                                     'gradient dropout', 'validation', 'test'])
 
-                    row = [type(evaluation_model).__name__, evaluation_model.epochs]
+                    row = [evaluation_model.epochs]
                     for value in individual:
                         row.append(value)
-                    row.append(fitness/reps)
+                    if(hasattr(evaluation_model, 'val_score')):
+                        row.append(evaluation_model.val_score)
+                    else:
+                        row.append(evaluation_model.test_score)
+
+                    row.append(evaluation_model.test_score)
+
                     #print(row, len(row))
                     #print(log_file.shape)
                     log_file.loc[len(log_file)] = row

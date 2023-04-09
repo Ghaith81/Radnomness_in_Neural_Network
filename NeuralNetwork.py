@@ -12,7 +12,7 @@ import warnings
 from Layer import DropConnect, NoisyReLU
 from Initializer import FixedWeightInitializer
 import os
-import GPUtil
+import matplotlib.pyplot as plt
 
 
 class TimeHistory(keras.callbacks.Callback):
@@ -287,7 +287,8 @@ class NeuralNetwork():
 
 
 
-
+        if (self.random_contrast == 0):
+            self.random_contrast = 0.001
         # Define the data augmentation pipeline
         if (self.random_flip <= 1):
 
@@ -385,6 +386,22 @@ class NeuralNetwork():
             #print(self.sleep)
             number_of_training_steps_per_epoch = len(self.dataset.X_trainSampled)//current_batch
 
+            #print('before')
+            #_ = plt.imshow(self.dataset.X_trainSampled[0])
+            #plt.show()
+
+            #images = data_augmentation(x_batch_train, training=True)
+            # print('after')
+            # _ = plt.imshow(images[0])
+            # plt.show()
+            # print()
+
+            #self.dataset.X_trainSampled = data_augmentation(self.dataset.X_trainSampled, training=True)
+            #print('after')
+            #_ = plt.imshow(self.dataset.X_trainSampled[0])
+            #plt.show()
+
+
 
             train_dataset = tf.data.Dataset.from_tensor_slices(
                 (self.dataset.X_trainSampled, self.dataset.y_trainSampled))
@@ -412,8 +429,16 @@ class NeuralNetwork():
                 #print(optimizer.lr)
 
                 timer = time.time()
-                images = data_augmentation(x_batch_train)
-                loss_value = train_step(images, y_batch_train, epoch)
+                #print('before')
+                #_ = plt.imshow(x_batch_train[0])
+                #plt.show()
+
+                images = data_augmentation(x_batch_train, training=True)
+                #print('after')
+                #_ = plt.imshow(images[0])
+                #plt.show()
+                #print()
+                loss_value = train_step(x_batch_train, y_batch_train, epoch)
                 average_train_step_time += time.time()-timer
 
 
@@ -666,9 +691,11 @@ class VGG(NeuralNetwork):
         x = tf.keras.layers.GaussianNoise(self.input_noise)(inputs)
         filter_size = 32
         x = DropConnect(layers.Conv2D(filter_size, kernel_size=(3, 3), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=self.weight_std), padding="same"), prob=self.drop_connect)(x)
+        x = tf.keras.layers.BatchNormalization()(x)
         x = NoisyReLU(stddev=self.activation_noise)(x)
         x = DropConnect(layers.Conv2D(filter_size, kernel_size=(3, 3), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=self.weight_std), padding="same"), prob=self.drop_connect)(x)
         x = NoisyReLU(stddev=self.activation_noise)(x)
+        x = tf.keras.layers.BatchNormalization()(x)
         x = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="valid")(x)
         x = layers.Dropout(self.dropout)(x)
         for _ in range(self.blocks-1):
@@ -676,8 +703,10 @@ class VGG(NeuralNetwork):
                 filter_size *= 2
             x = DropConnect(layers.Conv2D(filter_size, kernel_size=(3, 3), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=self.weight_std), padding="same"), prob=self.drop_connect)(x)
             x = NoisyReLU(stddev=self.activation_noise)(x)
+            x = tf.keras.layers.BatchNormalization()(x)
             x = DropConnect(layers.Conv2D(filter_size, kernel_size=(3, 3), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=self.weight_std), padding="same"), prob=self.drop_connect)(x)
             x = NoisyReLU(stddev=self.activation_noise)(x)
+            x = tf.keras.layers.BatchNormalization()(x)
             x = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="valid")(x)
             x = layers.Dropout(self.dropout)(x)
         x = layers.Flatten()(x)

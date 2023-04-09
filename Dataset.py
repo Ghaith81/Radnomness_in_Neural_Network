@@ -71,6 +71,11 @@ class MNIST(Dataset):
         X_test = X_test.astype("float32") / 255
         # Make sure images have shape (28, 28, 1)
 
+        X_train = np.expand_dims(X_train, -1)
+        X_test = np.expand_dims(X_test, -1)
+
+        self.expand = True
+
 
 
         self.X_train = X_train
@@ -115,6 +120,12 @@ class Fashion_MNIST(Dataset):
         X_test = X_test.astype("float32") / 255
         # Make sure images have shape (28, 28, 1)
 
+        X_train = np.expand_dims(X_train, -1)
+        X_test = np.expand_dims(X_test, -1)
+
+        self.expand = True
+
+
 
 
         self.X_train = X_train
@@ -158,9 +169,9 @@ class CIFAR10(Dataset):
         X_train = X_train.astype("float32") / 255
         X_test = X_test.astype("float32") / 255
 
-        X_train = np.expand_dims(X_train, -1)
-        X_test = np.expand_dims(X_test, -1)
-
+        #X_train = np.expand_dims(X_train, -1)
+        #X_test = np.expand_dims(X_test, -1)
+        self.expand = False
 
         self.X_train = X_train
         self.X_test = X_test
