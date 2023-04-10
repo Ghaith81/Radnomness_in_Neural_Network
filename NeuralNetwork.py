@@ -438,7 +438,7 @@ class NeuralNetwork():
                 #_ = plt.imshow(images[0])
                 #plt.show()
                 #print()
-                loss_value = train_step(x_batch_train, y_batch_train, epoch)
+                loss_value = train_step(images, y_batch_train, epoch)
                 average_train_step_time += time.time()-timer
 
 
@@ -509,7 +509,7 @@ class NeuralNetwork():
                     self.model.save_weights('best_model.h5')
                     patience_counter = 0
 
-            if (self.dataset.training_split < 1.0 and epoch == 0 and val_acc < self.cut_threshold):
+            if (self.dataset.training_split < 1.0 and val_acc < self.cut_threshold):
                 break
 
             if (optimizer.iterations > self.iterations):
@@ -691,8 +691,8 @@ class VGG(NeuralNetwork):
         x = tf.keras.layers.GaussianNoise(self.input_noise)(inputs)
         filter_size = 32
         x = DropConnect(layers.Conv2D(filter_size, kernel_size=(3, 3), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=self.weight_std), padding="same"), prob=self.drop_connect)(x)
-        x = tf.keras.layers.BatchNormalization()(x)
         x = NoisyReLU(stddev=self.activation_noise)(x)
+        x = tf.keras.layers.BatchNormalization()(x)
         x = DropConnect(layers.Conv2D(filter_size, kernel_size=(3, 3), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=self.weight_std), padding="same"), prob=self.drop_connect)(x)
         x = NoisyReLU(stddev=self.activation_noise)(x)
         x = tf.keras.layers.BatchNormalization()(x)
