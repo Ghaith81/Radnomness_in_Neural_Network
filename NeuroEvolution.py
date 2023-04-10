@@ -154,8 +154,8 @@ class NeuroEvolution:
 
                 if (log):
                     timestr = str(type(evaluation_model).__name__)+'_'+str(type(evaluation_model.dataset).__name__)+'_'+time.strftime("%Y%m%d")
-                    if (os.path.isfile('log\\'+timestr+'.xlsx')):
-                        log_file = pd.read_excel('log\\'+timestr+'.xlsx')
+                    if (os.path.isfile('log/'+timestr+'.xlsx')):
+                        log_file = pd.read_excel('log/'+timestr+'.xlsx')
                     else:
                         log_file = pd.DataFrame(
                             columns=['epochs', 'shuffle', 'flip', 'rotation', 'zoom', 'translation', 'contrast'
@@ -179,9 +179,9 @@ class NeuroEvolution:
                     #print(log_file.shape)
                     log_file.loc[len(log_file)] = row
 
-                    log_file.to_excel('log\\'+timestr+'.xlsx', index=False)
+                    log_file.to_excel('log/'+timestr+'.xlsx', index=False)
 
-                if (verbose):
+                if (verbose and not test_time):
 
                     print(evaluation_model.val_score, evaluation_model.test_score)
                 #print()
