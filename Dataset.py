@@ -214,8 +214,9 @@ class CIFAR100(Dataset):
         X_train = X_train.astype("float32") / 255
         X_test = X_test.astype("float32") / 255
 
-        X_train = np.expand_dims(X_train, -1)
-        X_test = np.expand_dims(X_test, -1)
+        # X_train = np.expand_dims(X_train, -1)
+        # X_test = np.expand_dims(X_test, -1)
+        self.expand = False
 
 
         self.X_train = X_train

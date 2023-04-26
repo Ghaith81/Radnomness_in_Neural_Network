@@ -181,13 +181,13 @@ class NeuroEvolution:
 
                     log_file.to_excel('log/'+timestr+'.xlsx', index=False)
 
-                if (verbose and not test_time):
+                if (verbose and hasattr(evaluation_model, 'val_score')):
 
                     print(evaluation_model.val_score, evaluation_model.test_score)
                 #print()
 
 
-                    if (pd.isna(evaluation_model.val_loss)):
+                if (hasattr(evaluation_model, 'val_loss') and pd.isna(evaluation_model.val_loss)):
                         return -1 * np.inf,
 
                 del evaluation_model
